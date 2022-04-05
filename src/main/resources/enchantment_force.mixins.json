@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "biom4st3r.mods.enchantment_force.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ItemStackMxn"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
