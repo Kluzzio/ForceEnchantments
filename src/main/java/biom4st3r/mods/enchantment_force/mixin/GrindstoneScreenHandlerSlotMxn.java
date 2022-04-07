@@ -18,7 +18,8 @@ public class GrindstoneScreenHandlerSlotMxn {
         if (item.getEnchantments().length > 0) {
             int output = ci.getReturnValueI();
             for (Enchantment e : item.getEnchantments()) {
-                output -= e.getMinPower(EnchantmentHelper.getLevel(e, stack));
+                int base_power = e.getMinPower(1);
+                output -= Math.max(base_power, e.getMinPower(EnchantmentHelper.getLevel(e, stack)) - 1);
             }
             ci.setReturnValue(output);
         }

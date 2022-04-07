@@ -1,13 +1,13 @@
 package biom4st3r.mods.enchantment_force;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,12 +15,12 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
 
 import biom4st3r.mods.enchantment_force.json.ConfigHolder;
+import biom4st3r.mods.enchantment_force.json.ItemWithEnchantmentConfig;
 import biom4st3r.mods.enchantment_force.json.JsonItemWithEnchantmentConfig;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -80,25 +80,34 @@ public class ModInit implements ModInitializer
 		}
 		return -1;
 	}
+	public static List<ItemWithEnchantmentConfig> in_code = Lists.newArrayList();
+	public static ConfigHolder CONFIG = null;
 
 	@Override
 	public void onInitialize() {
-		File file = new File(FabricLoader.getInstance().getConfigDir().toFile(), "forceEnchantments.json");
-		// file.mkdirs();
-		if (!file.exists()) {
-			try (FileOutputStream stream = new FileOutputStream(file)) {
-				stream.write(GSON.toJson(new ConfigHolder(new JsonItemWithEnchantmentConfig[0])).getBytes());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		} else {
-			try (FileInputStream stream = new FileInputStream(file)) {
-				ConfigHolder holder = GSON.fromJson(new String(stream.readAllBytes()), ConfigHolder.class);
-				holder.execute();
-			} catch (JsonSyntaxException | IOException e) {
-				e.printStackTrace();
-			}
-		}
-		Registry.register(Registry.ITEM, new Identifier("test:test"), new TestItem());
+		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
+			CONFIG = ConfigHolder.read();
+			// Gather all the enchantments assigned in code
+			JsonItemWithEnchantmentConfig[] secondary = in_code
+				.stream()
+				.map(config -> config.convert())
+				.toArray(JsonItemWithEnchantmentConfig[]::new);
+			// Make a set of all the itemids from the config. This is checked to see if an in_code assignment should be ignored
+			Set<String> found = Stream
+				.of(CONFIG.configs())
+				.map(config -> config.itemid())
+				.collect(Collectors.toSet());
+			// Combine all configs from file and code, filtering out unneeded code ones.
+			CONFIG = new ConfigHolder(Stream.of(
+				Stream.of(CONFIG.configs()),
+				Stream.of(secondary).filter(config -> !found.contains(config.itemid())))
+				.flatMap(s -> s)
+				.toArray(JsonItemWithEnchantmentConfig[]::new));
+			// save to disk
+			ConfigHolder.write(CONFIG);
+			in_code.clear();
+
+		});
 	}
+
 }
