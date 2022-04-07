@@ -44,7 +44,8 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "<init>(Lnet/minecraft/nbt/NbtCompound;)V", at = @At("TAIL"))
     private void forceEnchantments$init(NbtCompound compound, CallbackInfo ci) {
-        if (this.getItem() instanceof ItemWithEnchantment eitem) {
+        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (eitem.getEnchantments().length > 0) {
             for (NbtElement ele : (NbtList)compound.get("forced_enchantments")) {
                 NbtCompound nbt = (NbtCompound) ele;
                 forcedEnchantments.put(Registry.ENCHANTMENT.get(new Identifier(nbt.getString("id"))), nbt.getInt("lvl"));
@@ -60,7 +61,8 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "<init>(Lnet/minecraft/item/ItemConvertible;I)V", at = @At("TAIL"))
     private void forceEnchantments$init2(ItemConvertible item, int count, CallbackInfo ci) {
-        if (this.getItem() instanceof ItemWithEnchantment eitem) {
+        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (eitem.getEnchantments().length > 0) {
             final String KEY = "Enchantments";
             NbtCompound nbt = this.getOrCreateNbt();
             NbtList list = new NbtList();
@@ -80,7 +82,8 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "getEnchantments", at = @At("RETURN"), cancellable = true)
     private void forceEnchantments$getEnchantments(CallbackInfoReturnable<NbtList> ci) {
-        if (this.getItem() instanceof ItemWithEnchantment eitem) {
+        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (eitem.getEnchantments().length > 0) {
             final String KEY = "Enchantments";
             if (!this.getOrCreateNbt().contains(KEY)) {
                 NbtList list = forcedEnchantments$mapToNbtList();
@@ -115,7 +118,8 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "writeNbt", at = @At("TAIL"))
     private void forceEnchantments$writeNbt(NbtCompound nbt, CallbackInfoReturnable<NbtCompound> ci) {
-        if (this.getItem() instanceof ItemWithEnchantment eitem) {
+        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (eitem.getEnchantments().length > 0) {
             NbtList list = forcedEnchantments$mapToNbtList();
             nbt.put("forced_enchantments", list);
         }

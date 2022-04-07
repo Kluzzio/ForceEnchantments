@@ -47,10 +47,10 @@ dependencies {
 	//https://github.com/CottonMC/Cotton/wiki
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation "biom4st3r.libs.biow0rks:reflection:0.1.4"
-	include "biom4st3r.libs.biow0rks:reflection:0.1.4"
-	modImplementation "biom4st3r.libs.biow0rks:base:0.2.0"
-	include "biom4st3r.libs.biow0rks:base:0.2.0"
+	// modImplementation "biom4st3r.libs.biow0rks:reflection:0.1.4"
+	// include "biom4st3r.libs.biow0rks:reflection:0.1.4"
+	// modImplementation "biom4st3r.libs.biow0rks:base:0.2.0"
+	// include "biom4st3r.libs.biow0rks:base:0.2.0"
 
 }
 processResources {
