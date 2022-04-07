@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Set;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.common.collect.Sets;
