@@ -1,4 +1,4 @@
-implement ItemWithEnchantment on to your item and i'll just work
+use ItemWithEnchantmentAssigner to set enchantments via code
 
 alternatively:
 `config/forceEnchantments.json`
