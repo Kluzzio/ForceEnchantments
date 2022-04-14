@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import biom4st3r.mods.enchantment_force.ItemWithEnchantment;
 import biom4st3r.mods.enchantment_force.json.EnchantDesc;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
 
 @Mixin(targets = {"net/minecraft/screen/GrindstoneScreenHandler$4"})
@@ -19,7 +18,8 @@ public class GrindstoneScreenHandlerSlotMxn {
             int output = ci.getReturnValueI();
             for (EnchantDesc e : item.getEnchantments()) {
                 int base_power = e.enchant().getMinPower(1);
-                output -= Math.max(base_power, e.enchant().getMinPower(EnchantmentHelper.getLevel(e.enchant(), stack)) - 1);
+                // output -= Math.max(base_power, e.enchant().getMinPower(EnchantmentHelper.getLevel(e.enchant(), stack)) - 1);
+                output -= base_power;
             }
             ci.setReturnValue(output);
         }

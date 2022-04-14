@@ -7,13 +7,13 @@ import net.minecraft.util.registry.Registry;
 
 public record JsonItemWithEnchantmentConfig(
     String itemid,
-    JsonEnchantDesc[] enchantemnts
+    JsonEnchantDesc[] enchantments
 ) {
     public ItemWithEnchantmentConfig build() {
         return new ItemWithEnchantmentConfig(
             Registry.ITEM.get(new Identifier(itemid)), 
             Stream
-                .of(enchantemnts)
+                .of(this.enchantments())
                 .map(jdesc -> new EnchantDesc(Registry.ENCHANTMENT.get(new Identifier(jdesc.enchantment())), jdesc.lvl()))
                 .toArray(EnchantDesc[]::new)
         );
