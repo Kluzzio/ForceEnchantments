@@ -1,8 +1,7 @@
 package biom4st3r.mods.enchantment_force;
 
-import net.minecraft.enchantment.Enchantment;
+import biom4st3r.mods.enchantment_force.json.EnchantDesc;
 
 public interface ItemWithEnchantment {
-
-    Enchantment[] getEnchantments();
+    EnchantDesc[] getEnchantments();
 }

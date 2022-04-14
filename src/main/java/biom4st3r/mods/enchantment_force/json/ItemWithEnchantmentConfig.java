@@ -8,9 +8,21 @@ import net.minecraft.util.registry.Registry;
 
 public record ItemWithEnchantmentConfig(
     Item item,
-    Enchantment[] enchants
+    EnchantDesc[] enchants
 ) {
-    public JsonItemWithEnchantmentConfig convert() {
-        return new JsonItemWithEnchantmentConfig(Registry.ITEM.getId(item).toString(), Stream.of(enchants).map(enchant -> Registry.ENCHANTMENT.getId(enchant).toString()).toArray(String[]::new));
+    public ItemWithEnchantmentConfig(Item item, Enchantment[] enchants) {
+        this(item, Stream.of(enchants).map(enchant->new EnchantDesc(enchant,1)).toArray(EnchantDesc[]::new));
+    }
+
+    public JsonItemWithEnchantmentConfig unbuild() {
+        return new JsonItemWithEnchantmentConfig(
+            Registry.ITEM.getId(item).toString(), 
+            Stream
+                .of(enchants)
+                .map(desc -> new JsonEnchantDesc(
+                    Registry.ENCHANTMENT.getId(desc.enchant()).toString(), 
+                    desc.lvl())
+                )
+                .toArray(JsonEnchantDesc[]::new));
     }
 }

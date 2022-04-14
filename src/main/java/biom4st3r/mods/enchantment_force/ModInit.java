@@ -18,6 +18,7 @@ import com.google.gson.JsonParseException;
 
 import biom4st3r.mods.enchantment_force.json.ConfigHolder;
 import biom4st3r.mods.enchantment_force.json.ItemWithEnchantmentConfig;
+import biom4st3r.mods.enchantment_force.json.JsonEnchantDesc;
 import biom4st3r.mods.enchantment_force.json.JsonItemWithEnchantmentConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -33,8 +34,14 @@ public class ModInit implements ModInitializer
 	public static final String MODID = "enchantment_force";
 	public static final Gson GSON = new GsonBuilder()
 		.setPrettyPrinting()
+		.registerTypeAdapter(JsonEnchantDesc.class, new JsonDeserializer<JsonEnchantDesc>() {
+			@Override
+			public JsonEnchantDesc deserialize(JsonElement arg0, Type arg1, JsonDeserializationContext arg2)
+					throws JsonParseException {
+				return new JsonEnchantDesc(arg0.getAsJsonObject().get("enchantment").getAsString(), arg0.getAsJsonObject().get("lvl").getAsInt());
+			}
+		})
 		.registerTypeAdapter(ConfigHolder.class, new JsonDeserializer<ConfigHolder>() {
-
 			@Override
 			public ConfigHolder deserialize(JsonElement ele, Type type, JsonDeserializationContext ctx)
 					throws JsonParseException {
@@ -46,17 +53,23 @@ public class ModInit implements ModInitializer
 			}
 		})
 		.registerTypeAdapter(JsonItemWithEnchantmentConfig.class, new JsonDeserializer<JsonItemWithEnchantmentConfig>() {
-
 			@Override
 			public JsonItemWithEnchantmentConfig deserialize(JsonElement ele, Type arg1,
-					JsonDeserializationContext arg2) throws JsonParseException {
+					JsonDeserializationContext ctx) throws JsonParseException {
 				String id = ele.getAsJsonObject().get("itemid").getAsString();
-				String[] enchants = StreamSupport.stream(ele.getAsJsonObject().get("enchantments").getAsJsonArray().spliterator(), false)
-					.<String>map(member -> member.getAsString()).toArray(String[]::new);
+				JsonEnchantDesc[] enchants = StreamSupport.stream(ele.getAsJsonObject().get("enchantments").getAsJsonArray().spliterator(), false)
+					.map(member -> {
+						if (member.isJsonObject()) {
+							return ctx.deserialize(member, JsonEnchantDesc.class);
+						} else if(member.isJsonPrimitive()) {
+							return new JsonEnchantDesc(member.getAsString(), 1);
+						} else {
+							throw new JsonParseException("enchantments must be JsonObject with 'enchantment' and 'lvl' key. or String of 'enchantment' name");
+						}
+					}).toArray(JsonEnchantDesc[]::new);
 					;
 				return new JsonItemWithEnchantmentConfig(id, enchants);
 			}
-
 		})
 		.create();
 
@@ -90,7 +103,7 @@ public class ModInit implements ModInitializer
 			// Gather all the enchantments assigned in code
 			JsonItemWithEnchantmentConfig[] secondary = in_code
 				.stream()
-				.map(config -> config.convert())
+				.map(config -> config.unbuild())
 				.toArray(JsonItemWithEnchantmentConfig[]::new);
 			// Make a set of all the itemids from the config. This is checked to see if an in_code assignment should be ignored
 			Set<String> found = Stream

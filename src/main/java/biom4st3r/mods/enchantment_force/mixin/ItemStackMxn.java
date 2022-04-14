@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import biom4st3r.mods.enchantment_force.ItemWithEnchantment;
 import biom4st3r.mods.enchantment_force.ModInit;
+import biom4st3r.mods.enchantment_force.json.EnchantDesc;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
@@ -66,9 +67,9 @@ public abstract class ItemStackMxn {
             final String KEY = "Enchantments";
             NbtCompound nbt = this.getOrCreateNbt();
             NbtList list = new NbtList();
-            for (Enchantment enchant : eitem.getEnchantments()) {
-                list.add(EnchantmentHelper.createNbt(EnchantmentHelper.getEnchantmentId(enchant), 1));
-                forcedEnchantments.put(enchant, 1);
+            for (EnchantDesc desc : eitem.getEnchantments()) {
+                list.add(EnchantmentHelper.createNbt(EnchantmentHelper.getEnchantmentId(desc.enchant()), desc.lvl()));
+                forcedEnchantments.put(desc.enchant(), desc.lvl());
             }
             nbt.put(KEY, list);
         }
@@ -90,11 +91,11 @@ public abstract class ItemStackMxn {
                 this.getOrCreateNbt().put(KEY, list);
             }
             Set<Enchantment> has = ModInit.getEnchantments((NbtList)this.getOrCreateNbt().get(KEY));
-            for (Enchantment enchant : eitem.getEnchantments()) {
-                if (!has.contains(enchant)) {
-                    this.addEnchantment(enchant, forcedEnchantments.getInt(enchant));
-                } else if (forcedEnchantments.getInt(enchant) != ModInit.getLevel(enchant, (NbtList) this.getOrCreateNbt().get(KEY))) {
-                    this.forcedEnchantments.put(enchant, ModInit.getLevel(enchant, (NbtList) this.getOrCreateNbt().get(KEY)));
+            for (EnchantDesc desc : eitem.getEnchantments()) {
+                if (!has.contains(desc.enchant())) {
+                    this.addEnchantment(desc.enchant(), forcedEnchantments.getInt(desc));
+                } else if (forcedEnchantments.getInt(desc) != ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY))) {
+                    this.forcedEnchantments.put(desc.enchant(), ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY)));
                 }
             }
         }
