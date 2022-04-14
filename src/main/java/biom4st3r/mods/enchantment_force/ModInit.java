@@ -1,13 +1,13 @@
 package biom4st3r.mods.enchantment_force;
 
 import java.lang.reflect.Type;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -93,7 +93,8 @@ public class ModInit implements ModInitializer
 		}
 		return -1;
 	}
-	public static List<ItemWithEnchantmentConfig> in_code = Lists.newArrayList();
+	// public static List<ItemWithEnchantmentConfig> in_code = Lists.newArrayList();
+	public static Map<Object, ItemWithEnchantmentConfig> in_code = Maps.newHashMap();
 	public static ConfigHolder CONFIG = null;
 
 	@Override
@@ -101,7 +102,7 @@ public class ModInit implements ModInitializer
 		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
 			CONFIG = ConfigHolder.read();
 			// Gather all the enchantments assigned in code
-			JsonItemWithEnchantmentConfig[] secondary = in_code
+			JsonItemWithEnchantmentConfig[] secondary = in_code.values()
 				.stream()
 				.map(config -> config.unbuild())
 				.toArray(JsonItemWithEnchantmentConfig[]::new);

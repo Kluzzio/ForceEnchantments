@@ -22,11 +22,12 @@ public class ItemMxn implements ItemWithEnchantment, ItemWithEnchantmentAssigner
     }
     @Override
     public void setEnchantments(Enchantment[] enchants) {
-        ModInit.in_code.add(new ItemWithEnchantmentConfig((Item)(Object)this, enchants));
+        ModInit.in_code.put(this, new ItemWithEnchantmentConfig((Item)(Object)this, enchants));
         this.forcedEnchantments$enchantments = Stream.of(enchants).map(enchant -> new EnchantDesc(enchant, 1)).toArray(EnchantDesc[]::new);
     }
     @Override
     public void setEnchantments(EnchantDesc[] desc) {
-        
+        ModInit.in_code.put(this, new ItemWithEnchantmentConfig((Item)(Object)this, desc));
+        this.forcedEnchantments$enchantments = desc;
     }
 }
