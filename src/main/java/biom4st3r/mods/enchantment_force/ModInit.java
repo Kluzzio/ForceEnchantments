@@ -20,6 +20,8 @@ import biom4st3r.mods.enchantment_force.json.ConfigHolder;
 import biom4st3r.mods.enchantment_force.json.ItemWithEnchantmentConfig;
 import biom4st3r.mods.enchantment_force.json.JsonEnchantDesc;
 import biom4st3r.mods.enchantment_force.json.JsonItemWithEnchantmentConfig;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.enchantment.Enchantment;
@@ -93,6 +95,19 @@ public class ModInit implements ModInitializer
 		}
 		return -1;
 	}
+	public static void removeEnchantment(Enchantment e, NbtList list) {
+		String enchant = Registry.ENCHANTMENT.getId(e).toString();
+		IntList toRemove = new IntArrayList();
+		for (int i = 0; i < list.size(); i++) {
+			NbtCompound compound = list.getCompound(i);
+			if (compound.getString(ID_KEY).equals(enchant)) {
+				toRemove.add(i - toRemove.size());
+			}
+		}
+		for (int i : toRemove) {
+			list.remove(i);
+		}
+	} 
 	// public static List<ItemWithEnchantmentConfig> in_code = Lists.newArrayList();
 	public static Map<Object, ItemWithEnchantmentConfig> in_code = Maps.newHashMap();
 	public static ConfigHolder CONFIG = null;
@@ -119,9 +134,11 @@ public class ModInit implements ModInitializer
 				.toArray(JsonItemWithEnchantmentConfig[]::new));
 			// save to disk
 			ConfigHolder.write(CONFIG);
+			CONFIG.execute(); // Must go before clear, because it adds things to clear
 			in_code.clear();
-
 		});
+		// ItemWithEnchantmentAssigner.assign(Items.STICK, new EnchantDesc[]{new EnchantDesc(Enchantments.FIRE_ASPECT, 2)});
 	}
+
 
 }

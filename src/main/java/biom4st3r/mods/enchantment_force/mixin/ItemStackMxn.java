@@ -1,6 +1,8 @@
 package biom4st3r.mods.enchantment_force.mixin;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -47,9 +49,21 @@ public abstract class ItemStackMxn {
     private void forceEnchantments$init(NbtCompound compound, CallbackInfo ci) {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
         if (eitem.getEnchantments().length > 0) {
+
+            // ModInit.mixinTest();
             for (NbtElement ele : (NbtList)compound.get("forced_enchantments")) {
                 NbtCompound nbt = (NbtCompound) ele;
                 forcedEnchantments.put(Registry.ENCHANTMENT.get(new Identifier(nbt.getString("id"))), nbt.getInt("lvl"));
+            }
+            Set<Enchantment> set = Stream.of(eitem.getEnchantments()).map(desc -> desc.enchant()).collect(Collectors.toSet());
+            Enchantment[] toRemove = forcedEnchantments.keySet().stream().filter(e -> !set.contains(e)).toArray(Enchantment[]::new);
+
+            final String KEY = "Enchantments";
+            for (Enchantment e : toRemove) {
+                forcedEnchantments.removeInt(e);
+                if (this.getOrCreateNbt().contains(KEY)) {
+                    ModInit.removeEnchantment(e, (NbtList) getOrCreateNbt().get(KEY));
+                }
             }
         }
     }
@@ -64,6 +78,8 @@ public abstract class ItemStackMxn {
     private void forceEnchantments$init2(ItemConvertible item, int count, CallbackInfo ci) {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
         if (eitem.getEnchantments().length > 0) {
+
+            // ModInit.mixinTest();
             final String KEY = "Enchantments";
             NbtCompound nbt = this.getOrCreateNbt();
             NbtList list = new NbtList();
@@ -93,8 +109,8 @@ public abstract class ItemStackMxn {
             Set<Enchantment> has = ModInit.getEnchantments((NbtList)this.getOrCreateNbt().get(KEY));
             for (EnchantDesc desc : eitem.getEnchantments()) {
                 if (!has.contains(desc.enchant())) {
-                    this.addEnchantment(desc.enchant(), forcedEnchantments.getInt(desc));
-                } else if (forcedEnchantments.getInt(desc) != ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY))) {
+                    this.addEnchantment(desc.enchant(), forcedEnchantments.getInt(desc.enchant()));
+                } else if (forcedEnchantments.getInt(desc.enchant()) != ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY))) {
                     this.forcedEnchantments.put(desc.enchant(), ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY)));
                 }
             }
