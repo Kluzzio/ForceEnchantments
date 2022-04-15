@@ -1,7 +1,7 @@
 {
   "required": true,
   "package": "biom4st3r.mods.enchantment_force.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_16",
   "mixins": [
     "ItemStackMxn",
     "ItemMxn",

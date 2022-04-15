@@ -19,6 +19,11 @@ public record ConfigHolder(JsonItemWithEnchantmentConfig[] configs) {
             ItemWithEnchantmentAssigner.assign(config.item(), config.enchants());
         });
     }
+    public void unexecute() {
+        Stream.of(configs).map(config -> config.build()).forEach(config -> {
+            ItemWithEnchantmentAssigner.assign(config.item(), ModInit.forcedEnchantment$DEFAULT);
+        });
+    }
     private static File getFile() {
         return  new File(FabricLoader.getInstance().getConfigDir().toFile(), "forceEnchantments.json");
     }

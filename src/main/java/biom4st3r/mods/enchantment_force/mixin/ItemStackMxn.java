@@ -48,13 +48,15 @@ public abstract class ItemStackMxn {
     @Inject(method = "<init>(Lnet/minecraft/nbt/NbtCompound;)V", at = @At("TAIL"))
     private void forceEnchantments$init(NbtCompound compound, CallbackInfo ci) {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
-
-            // ModInit.mixinTest();
+            // Refill forcedEnchantments after deserialization
             for (NbtElement ele : (NbtList)compound.get("forced_enchantments")) {
                 NbtCompound nbt = (NbtCompound) ele;
                 forcedEnchantments.put(Registry.ENCHANTMENT.get(new Identifier(nbt.getString("id"))), nbt.getInt("lvl"));
             }
+
+            // Remove forcedEnchantments that were serialized, but are no longer in the config
             Set<Enchantment> set = Stream.of(eitem.getEnchantments()).map(desc -> desc.enchant()).collect(Collectors.toSet());
             Enchantment[] toRemove = forcedEnchantments.keySet().stream().filter(e -> !set.contains(e)).toArray(Enchantment[]::new);
 
@@ -77,12 +79,14 @@ public abstract class ItemStackMxn {
     @Inject(method = "<init>(Lnet/minecraft/item/ItemConvertible;I)V", at = @At("TAIL"))
     private void forceEnchantments$init2(ItemConvertible item, int count, CallbackInfo ci) {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+
+        // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
 
-            // ModInit.mixinTest();
             final String KEY = "Enchantments";
             NbtCompound nbt = this.getOrCreateNbt();
             NbtList list = new NbtList();
+            // Add all forcedEnchantments
             for (EnchantDesc desc : eitem.getEnchantments()) {
                 list.add(EnchantmentHelper.createNbt(EnchantmentHelper.getEnchantmentId(desc.enchant()), desc.lvl()));
                 forcedEnchantments.put(desc.enchant(), desc.lvl());
@@ -100,16 +104,21 @@ public abstract class ItemStackMxn {
     @Inject(method = "getEnchantments", at = @At("RETURN"), cancellable = true)
     private void forceEnchantments$getEnchantments(CallbackInfoReturnable<NbtList> ci) {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
             final String KEY = "Enchantments";
+            // if has no enchantments: add them all
             if (!this.getOrCreateNbt().contains(KEY)) {
                 NbtList list = forcedEnchantments$mapToNbtList();
                 this.getOrCreateNbt().put(KEY, list);
             }
             Set<Enchantment> has = ModInit.getEnchantments((NbtList)this.getOrCreateNbt().get(KEY));
+            // for all forcedEnchantments
             for (EnchantDesc desc : eitem.getEnchantments()) {
+                // if it's missing a forcedEnchantment add it
                 if (!has.contains(desc.enchant())) {
                     this.addEnchantment(desc.enchant(), forcedEnchantments.getInt(desc.enchant()));
+                // if recorded enchantments level doesn't match current enchantment: update recorded enchantment
                 } else if (forcedEnchantments.getInt(desc.enchant()) != ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY))) {
                     this.forcedEnchantments.put(desc.enchant(), ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY)));
                 }
@@ -137,6 +146,8 @@ public abstract class ItemStackMxn {
     private void forceEnchantments$writeNbt(NbtCompound nbt, CallbackInfoReturnable<NbtCompound> ci) {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
         if (eitem.getEnchantments().length > 0) {
+                
+            // If has forced enchatments assigned: serialize forcedEnchantments map
             NbtList list = forcedEnchantments$mapToNbtList();
             nbt.put("forced_enchantments", list);
         }

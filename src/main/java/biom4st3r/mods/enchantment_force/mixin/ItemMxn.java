@@ -14,8 +14,7 @@ import net.minecraft.item.Item;
 
 @Mixin({Item.class})
 public class ItemMxn implements ItemWithEnchantment, ItemWithEnchantmentAssigner {
-    private static final EnchantDesc[] forcedEnchantment$DEFAULT = new EnchantDesc[0];
-    EnchantDesc[] forcedEnchantments$enchantments = forcedEnchantment$DEFAULT;
+    EnchantDesc[] forcedEnchantments$enchantments = ModInit.forcedEnchantment$DEFAULT;
     @Override
     public EnchantDesc[] getEnchantments() {
         return forcedEnchantments$enchantments;

@@ -17,6 +17,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 
 import biom4st3r.mods.enchantment_force.json.ConfigHolder;
+import biom4st3r.mods.enchantment_force.json.EnchantDesc;
 import biom4st3r.mods.enchantment_force.json.ItemWithEnchantmentConfig;
 import biom4st3r.mods.enchantment_force.json.JsonEnchantDesc;
 import biom4st3r.mods.enchantment_force.json.JsonItemWithEnchantmentConfig;
@@ -31,8 +32,9 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 
-public class ModInit implements ModInitializer
-{
+public class ModInit implements ModInitializer {
+
+    public static final EnchantDesc[] forcedEnchantment$DEFAULT = new EnchantDesc[0];
 	public static final String MODID = "enchantment_force";
 	public static final Gson GSON = new GsonBuilder()
 		.setPrettyPrinting()
@@ -86,6 +88,7 @@ public class ModInit implements ModInitializer
 		}
 		return enchantments;
 	}
+
 	public static int getLevel(Enchantment enchantment, NbtList list) {
 		for (NbtElement ele : list) {
 			NbtCompound nbt = (NbtCompound) ele;
@@ -95,6 +98,7 @@ public class ModInit implements ModInitializer
 		}
 		return -1;
 	}
+
 	public static void removeEnchantment(Enchantment e, NbtList list) {
 		String enchant = Registry.ENCHANTMENT.getId(e).toString();
 		IntList toRemove = new IntArrayList();
@@ -108,7 +112,7 @@ public class ModInit implements ModInitializer
 			list.remove(i);
 		}
 	} 
-	// public static List<ItemWithEnchantmentConfig> in_code = Lists.newArrayList();
+
 	public static Map<Object, ItemWithEnchantmentConfig> in_code = Maps.newHashMap();
 	public static ConfigHolder CONFIG = null;
 
@@ -137,7 +141,11 @@ public class ModInit implements ModInitializer
 			CONFIG.execute(); // Must go before clear, because it adds things to clear
 			in_code.clear();
 		});
-		// ItemWithEnchantmentAssigner.assign(Items.STICK, new EnchantDesc[]{new EnchantDesc(Enchantments.FIRE_ASPECT, 2)});
+
+		ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
+			CONFIG.unexecute();
+			in_code.clear();
+		});
 	}
 
 
