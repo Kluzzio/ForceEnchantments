@@ -14,10 +14,6 @@ group = project.maven_group
 repositories {
 	maven { url "https://jitpack.io" }
 	maven {
-        name = "NerdHubMC"
-        url = "https://maven.abusedmaster.xyz"
-    }
-	maven {
         name = "BuildCraft"
         url = "https://mod-buildcraft.com/maven"
     }

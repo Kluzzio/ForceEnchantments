@@ -26,6 +26,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.Enchantments;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -99,6 +101,15 @@ public class ModInit implements ModInitializer {
 		return -1;
 	}
 
+	public static void setLevel(Enchantment enchantment, int i, NbtList list) {
+		for (NbtElement ele : list) {
+			NbtCompound nbt = (NbtCompound) ele;
+			if (enchantment == Registry.ENCHANTMENT.get(new Identifier(nbt.getString(ID_KEY)))) {
+				nbt.putInt(LEVEL_KEY, i);
+			}
+		}
+	}
+
 	public static void removeEnchantment(Enchantment e, NbtList list) {
 		String enchant = Registry.ENCHANTMENT.getId(e).toString();
 		IntList toRemove = new IntArrayList();
@@ -146,7 +157,7 @@ public class ModInit implements ModInitializer {
 			CONFIG.unexecute();
 			in_code.clear();
 		});
+		// ItemWithEnchantmentAssigner.assign(Items.WARPED_FUNGUS_ON_A_STICK, new EnchantDesc[]{new EnchantDesc(Enchantments.FIRE_ASPECT, 1)});
 	}
-
 
 }

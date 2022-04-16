@@ -50,17 +50,25 @@ public abstract class ItemStackMxn {
         ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
         // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
+            // ModInit.mixinTest();
+            
+            final String KEY = "Enchantments";
             // Refill forcedEnchantments after deserialization
             for (NbtElement ele : (NbtList)compound.get("forced_enchantments")) {
                 NbtCompound nbt = (NbtCompound) ele;
                 forcedEnchantments.put(Registry.ENCHANTMENT.get(new Identifier(nbt.getString("id"))), nbt.getInt("lvl"));
             }
+            for (EnchantDesc desc : eitem.getEnchantments()) {
+                if (this.forcedEnchantments.getInt(desc.enchant()) < desc.lvl()) {
+                    forcedEnchantments.put(desc.enchant(), desc.lvl());
+                }
+                ModInit.setLevel(desc.enchant(), desc.lvl(), (NbtList) this.getOrCreateNbt().get(KEY));
+            }            
 
             // Remove forcedEnchantments that were serialized, but are no longer in the config
             Set<Enchantment> set = Stream.of(eitem.getEnchantments()).map(desc -> desc.enchant()).collect(Collectors.toSet());
             Enchantment[] toRemove = forcedEnchantments.keySet().stream().filter(e -> !set.contains(e)).toArray(Enchantment[]::new);
 
-            final String KEY = "Enchantments";
             for (Enchantment e : toRemove) {
                 forcedEnchantments.removeInt(e);
                 if (this.getOrCreateNbt().contains(KEY)) {
