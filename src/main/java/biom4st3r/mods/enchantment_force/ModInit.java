@@ -110,10 +110,6 @@ public class ModInit implements ModInitializer {
 		// convert map to nbtlist
 		for (Entry<Enchantment> entry : map.object2IntEntrySet()) {
 			list.add(EnchantmentHelper.createNbt(Registry.ENCHANTMENT.getId(entry.getKey()), entry.getIntValue()));
-			// NbtCompound compound = new NbtCompound();
-			// compound.putString(ID_KEY, Registry.ENCHANTMENT.getId(entry.getKey()).toString());
-			// compound.putShort(LEVEL_KEY, (short)entry.getIntValue());
-			// list.add(compound);
 		}
 		// set if not empty
 		if (!map.isEmpty()) stackTag.put(ENCHANTMENTS, list);
@@ -125,7 +121,6 @@ public class ModInit implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ServerLifecycleEvents.SERVER_STARTING.register((server) -> {
-			// System.out.println("\n\n\n\n\nRUNNIGN\n\n\n\n\n\n\n");
 			CONFIG = ConfigHolder.read();
 			// Gather all the enchantments assigned in code
 			JsonItemWithEnchantmentConfig[] secondary = in_code.values()
@@ -144,7 +139,7 @@ public class ModInit implements ModInitializer {
 				.flatMap(s -> s)
 				.toArray(JsonItemWithEnchantmentConfig[]::new));
 			// save to disk
-			ConfigHolder.write(CONFIG);
+			CONFIG.write();
 			CONFIG.execute(); // Must go before clear, because it adds things to clear
 			in_code.clear();
 		});

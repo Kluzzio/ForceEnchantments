@@ -48,10 +48,10 @@ public record ConfigHolder(JsonItemWithEnchantmentConfig[] configs) {
         return new ConfigHolder(new JsonItemWithEnchantmentConfig[0]);
     }
 
-    public static void write(ConfigHolder holder) {
+    public void write() {
         File file = getFile();
         try (FileOutputStream stream = new FileOutputStream(file)) {
-            stream.write(ModInit.GSON.toJson(holder).getBytes());
+            stream.write(ModInit.GSON.toJson(this).getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
