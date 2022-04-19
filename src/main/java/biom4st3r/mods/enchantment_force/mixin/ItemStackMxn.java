@@ -59,7 +59,7 @@ public abstract class ItemStackMxn {
         final ItemWithEnchantment eitem = (ItemWithEnchantment) this.item;
         // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
-            ModInit.mixin();
+            // ModInit.mixin();
             // Deserialize forcedEnchantments
             for (NbtElement ele : (NbtList)compound.get("forced_enchantments")) {
                 NbtCompound nbt = (NbtCompound) ele;
@@ -100,7 +100,7 @@ public abstract class ItemStackMxn {
 
         // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
-            ModInit.mixin();
+            // ModInit.mixin();
             ModInit.visitEnchantments(this.getOrCreateNbt(), enchants -> {
                 for (EnchantDesc desc : eitem.getEnchantments()) {
                     enchants.put(desc.enchant(), desc.lvl());

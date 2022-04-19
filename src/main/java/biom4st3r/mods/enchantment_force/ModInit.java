@@ -156,8 +156,8 @@ public class ModInit implements ModInitializer {
 		// ItemWithEnchantmentAssigner.assign(Items.WARPED_FUNGUS_ON_A_STICK, new EnchantDesc[]{new EnchantDesc(Enchantments.FIRE_ASPECT, 1)});
 	}
 
-	public static void mixin() {
-		if (Boolean.FALSE);
-	}
+	// public static void mixin() {
+	// 	if (Boolean.FALSE);
+	// }
 
 }
