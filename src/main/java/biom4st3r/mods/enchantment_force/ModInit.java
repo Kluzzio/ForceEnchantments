@@ -51,7 +51,7 @@ public class ModInit implements ModInitializer {
 			@Override
 			public ConfigHolder deserialize(JsonElement ele, Type type, JsonDeserializationContext ctx)
 					throws JsonParseException {
-				
+
 					JsonItemWithEnchantmentConfig[] woop = StreamSupport.stream(ele.getAsJsonObject().get("configs").getAsJsonArray().spliterator(), false)
 					.<JsonItemWithEnchantmentConfig>map(member -> ctx.deserialize(member, JsonItemWithEnchantmentConfig.class)).toArray(JsonItemWithEnchantmentConfig[]::new)
 					;
@@ -150,9 +150,5 @@ public class ModInit implements ModInitializer {
 		});
 		// ItemWithEnchantmentAssigner.assign(Items.WARPED_FUNGUS_ON_A_STICK, new EnchantDesc[]{new EnchantDesc(Enchantments.FIRE_ASPECT, 1)});
 	}
-
-	// public static void mixin() {
-	// 	if (Boolean.FALSE);
-	// }
 
 }
