@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,6 +23,7 @@ import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -32,13 +34,19 @@ import net.minecraft.util.registry.Registry;
 public abstract class ItemStackMxn {
 
     @Shadow
+    @Final
+    private Item item;
+
+    @Shadow
     public abstract NbtCompound getOrCreateNbt();
-    @Shadow
-    public abstract Item getItem();
-    @Shadow
-    public abstract void addEnchantment(Enchantment enchantment, int level);
+    // @Shadow
+    // public abstract Item getItem();
 
     Object2IntMap<Enchantment> forcedEnchantments = new Object2IntArrayMap<>(0);
+
+    private boolean forcedEnchantments$shouldIgnore() {
+        return this.item == null || ((ItemStack)(Object)this).isOf(Items.AIR);
+    }
 
     /**
      * if ItemWithEnchantment: deserialize the saved forcedEnchantments
@@ -47,34 +55,35 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "<init>(Lnet/minecraft/nbt/NbtCompound;)V", at = @At("TAIL"))
     private void forceEnchantments$init(NbtCompound compound, CallbackInfo ci) {
-        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (this.forcedEnchantments$shouldIgnore()) return;
+        final ItemWithEnchantment eitem = (ItemWithEnchantment) this.item;
         // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
-            // ModInit.mixinTest();
-            
-            final String KEY = "Enchantments";
-            // Refill forcedEnchantments after deserialization
+            ModInit.mixin();
+            // Deserialize forcedEnchantments
             for (NbtElement ele : (NbtList)compound.get("forced_enchantments")) {
                 NbtCompound nbt = (NbtCompound) ele;
                 forcedEnchantments.put(Registry.ENCHANTMENT.get(new Identifier(nbt.getString("id"))), nbt.getInt("lvl"));
             }
-            for (EnchantDesc desc : eitem.getEnchantments()) {
-                if (this.forcedEnchantments.getInt(desc.enchant()) < desc.lvl()) {
-                    forcedEnchantments.put(desc.enchant(), desc.lvl());
-                }
-                ModInit.setLevel(desc.enchant(), desc.lvl(), (NbtList) this.getOrCreateNbt().get(KEY));
-            }            
 
-            // Remove forcedEnchantments that were serialized, but are no longer in the config
-            Set<Enchantment> set = Stream.of(eitem.getEnchantments()).map(desc -> desc.enchant()).collect(Collectors.toSet());
-            Enchantment[] toRemove = forcedEnchantments.keySet().stream().filter(e -> !set.contains(e)).toArray(Enchantment[]::new);
-
-            for (Enchantment e : toRemove) {
-                forcedEnchantments.removeInt(e);
-                if (this.getOrCreateNbt().contains(KEY)) {
-                    ModInit.removeEnchantment(e, (NbtList) getOrCreateNbt().get(KEY));
+            ModInit.visitEnchantments(this.getOrCreateNbt(), enchant -> {
+                for (EnchantDesc desc : eitem.getEnchantments()) {
+                    if (this.forcedEnchantments.getInt(desc.enchant()) < desc.lvl()) {
+                        this.forcedEnchantments.put(desc.enchant(), desc.lvl());
+                    }
+                    if (enchant.getInt(desc.enchant()) < desc.lvl()) {
+                        enchant.put(desc.enchant(), desc.lvl());
+                    }
                 }
-            }
+
+                // Remove forcedEnchantments that were serialized, but are no longer in the config
+                Set<Enchantment> enchantmentsOnItem = Stream.of(eitem.getEnchantments()).map(desc -> desc.enchant()).collect(Collectors.toSet());
+                Enchantment[] toRemove = forcedEnchantments.keySet().stream().filter(e -> !enchantmentsOnItem.contains(e)).toArray(Enchantment[]::new);
+                for (Enchantment e : toRemove) {
+                    forcedEnchantments.removeInt(e);
+                    enchant.removeInt(e);
+                }
+            });
         }
     }
 
@@ -86,20 +95,18 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "<init>(Lnet/minecraft/item/ItemConvertible;I)V", at = @At("TAIL"))
     private void forceEnchantments$init2(ItemConvertible item, int count, CallbackInfo ci) {
-        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (this.forcedEnchantments$shouldIgnore()) return;
+        final ItemWithEnchantment eitem = (ItemWithEnchantment) this.item;
 
         // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
-
-            final String KEY = "Enchantments";
-            NbtCompound nbt = this.getOrCreateNbt();
-            NbtList list = new NbtList();
-            // Add all forcedEnchantments
-            for (EnchantDesc desc : eitem.getEnchantments()) {
-                list.add(EnchantmentHelper.createNbt(EnchantmentHelper.getEnchantmentId(desc.enchant()), desc.lvl()));
-                forcedEnchantments.put(desc.enchant(), desc.lvl());
-            }
-            nbt.put(KEY, list);
+            ModInit.mixin();
+            ModInit.visitEnchantments(this.getOrCreateNbt(), enchants -> {
+                for (EnchantDesc desc : eitem.getEnchantments()) {
+                    enchants.put(desc.enchant(), desc.lvl());
+                    forcedEnchantments.put(desc.enchant(), desc.lvl());
+                }
+            });
         }
     }
 
@@ -111,26 +118,19 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "getEnchantments", at = @At("RETURN"), cancellable = true)
     private void forceEnchantments$getEnchantments(CallbackInfoReturnable<NbtList> ci) {
-        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (this.forcedEnchantments$shouldIgnore()) return;
+        final ItemWithEnchantment eitem = (ItemWithEnchantment) this.item;
         // If has forced enchatments assigned
         if (eitem.getEnchantments().length > 0) {
-            final String KEY = "Enchantments";
-            // if has no enchantments: add them all
-            if (!this.getOrCreateNbt().contains(KEY)) {
-                NbtList list = forcedEnchantments$mapToNbtList();
-                this.getOrCreateNbt().put(KEY, list);
-            }
-            Set<Enchantment> has = ModInit.getEnchantments((NbtList)this.getOrCreateNbt().get(KEY));
-            // for all forcedEnchantments
-            for (EnchantDesc desc : eitem.getEnchantments()) {
-                // if it's missing a forcedEnchantment add it
-                if (!has.contains(desc.enchant())) {
-                    this.addEnchantment(desc.enchant(), forcedEnchantments.getInt(desc.enchant()));
-                // if recorded enchantments level doesn't match current enchantment: update recorded enchantment
-                } else if (forcedEnchantments.getInt(desc.enchant()) != ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY))) {
-                    this.forcedEnchantments.put(desc.enchant(), ModInit.getLevel(desc.enchant(), (NbtList) this.getOrCreateNbt().get(KEY)));
+            ModInit.visitEnchantments(this.getOrCreateNbt(), enchants -> {
+                for (EnchantDesc desc : eitem.getEnchantments()) {
+                    if (!enchants.containsKey(desc.enchant())) {
+                        enchants.put(desc.enchant(), desc.lvl());
+                    } else if (forcedEnchantments.getInt(desc.enchant()) != enchants.getInt(desc.enchant())) {
+                        this.forcedEnchantments.put(desc.enchant(), enchants.getInt(desc.enchant()));
+                    }
                 }
-            }
+            });
         }
     }
 
@@ -152,9 +152,10 @@ public abstract class ItemStackMxn {
      */
     @Inject(method = "writeNbt", at = @At("TAIL"))
     private void forceEnchantments$writeNbt(NbtCompound nbt, CallbackInfoReturnable<NbtCompound> ci) {
-        ItemWithEnchantment eitem = (ItemWithEnchantment) this.getItem();
+        if (this.forcedEnchantments$shouldIgnore()) return;
+        ItemWithEnchantment eitem = (ItemWithEnchantment) this.item;
         if (eitem.getEnchantments().length > 0) {
-                
+
             // If has forced enchatments assigned: serialize forcedEnchantments map
             NbtList list = forcedEnchantments$mapToNbtList();
             nbt.put("forced_enchantments", list);

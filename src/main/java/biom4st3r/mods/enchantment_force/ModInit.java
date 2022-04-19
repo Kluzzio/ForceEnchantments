@@ -3,12 +3,12 @@ package biom4st3r.mods.enchantment_force;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -21,13 +21,13 @@ import biom4st3r.mods.enchantment_force.json.EnchantDesc;
 import biom4st3r.mods.enchantment_force.json.ItemWithEnchantmentConfig;
 import biom4st3r.mods.enchantment_force.json.JsonEnchantDesc;
 import biom4st3r.mods.enchantment_force.json.JsonItemWithEnchantmentConfig;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.Items;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -81,55 +81,51 @@ public class ModInit implements ModInitializer {
 
     private static final String ID_KEY = "id";
     private static final String LEVEL_KEY = "lvl";
+	private static final String ENCHANTMENTS = "Enchantments";
 
-	public static Set<Enchantment> getEnchantments(NbtList list) {
-		Set<Enchantment> enchantments = Sets.newHashSet();
-		for(NbtElement ele : list) {
-			NbtCompound nbt = (NbtCompound) ele;
-			enchantments.add(Registry.ENCHANTMENT.get(new Identifier(nbt.getString(ID_KEY))));
+	/**
+	 * Give you access to a map representing the enchantments on in the itemstack.
+	 * <p> any changes(add, remove, change lvl) will be saved to the stack.
+	 * <p> Visitor Pattern FTW
+	 * @param stackTag
+	 * @param consumer
+	 */
+	public static void visitEnchantments(NbtCompound stackTag, Consumer<Object2IntMap<Enchantment>> consumer) {
+		NbtList list;
+		// get the enchantment nbt list
+		if (stackTag.contains(ENCHANTMENTS)) {
+			list = (NbtList) stackTag.get(ENCHANTMENTS);
+		} else {
+			list = new NbtList();
 		}
-		return enchantments;
-	}
-
-	public static int getLevel(Enchantment enchantment, NbtList list) {
+		Object2IntMap<Enchantment> map = new Object2IntOpenHashMap<>();
+		// copy into map
 		for (NbtElement ele : list) {
 			NbtCompound nbt = (NbtCompound) ele;
-			if (enchantment == Registry.ENCHANTMENT.get(new Identifier(nbt.getString(ID_KEY)))) {
-				return nbt.getInt(LEVEL_KEY);
-			}
+			map.put(Registry.ENCHANTMENT.get(new Identifier(nbt.getString(ID_KEY))), nbt.getInt(LEVEL_KEY));
 		}
-		return -1;
+		// let the caller interact
+		consumer.accept(map);
+		list.clear();
+		// convert map to nbtlist
+		for (Entry<Enchantment> entry : map.object2IntEntrySet()) {
+			list.add(EnchantmentHelper.createNbt(Registry.ENCHANTMENT.getId(entry.getKey()), entry.getIntValue()));
+			// NbtCompound compound = new NbtCompound();
+			// compound.putString(ID_KEY, Registry.ENCHANTMENT.getId(entry.getKey()).toString());
+			// compound.putShort(LEVEL_KEY, (short)entry.getIntValue());
+			// list.add(compound);
+		}
+		// set if not empty
+		if (!map.isEmpty()) stackTag.put(ENCHANTMENTS, list);
 	}
-
-	public static void setLevel(Enchantment enchantment, int i, NbtList list) {
-		for (NbtElement ele : list) {
-			NbtCompound nbt = (NbtCompound) ele;
-			if (enchantment == Registry.ENCHANTMENT.get(new Identifier(nbt.getString(ID_KEY)))) {
-				nbt.putInt(LEVEL_KEY, i);
-			}
-		}
-	}
-
-	public static void removeEnchantment(Enchantment e, NbtList list) {
-		String enchant = Registry.ENCHANTMENT.getId(e).toString();
-		IntList toRemove = new IntArrayList();
-		for (int i = 0; i < list.size(); i++) {
-			NbtCompound compound = list.getCompound(i);
-			if (compound.getString(ID_KEY).equals(enchant)) {
-				toRemove.add(i - toRemove.size());
-			}
-		}
-		for (int i : toRemove) {
-			list.remove(i);
-		}
-	} 
 
 	public static Map<Object, ItemWithEnchantmentConfig> in_code = Maps.newHashMap();
 	public static ConfigHolder CONFIG = null;
 
 	@Override
 	public void onInitialize() {
-		ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
+		ServerLifecycleEvents.SERVER_STARTING.register((server) -> {
+			// System.out.println("\n\n\n\n\nRUNNIGN\n\n\n\n\n\n\n");
 			CONFIG = ConfigHolder.read();
 			// Gather all the enchantments assigned in code
 			JsonItemWithEnchantmentConfig[] secondary = in_code.values()
@@ -158,6 +154,10 @@ public class ModInit implements ModInitializer {
 			in_code.clear();
 		});
 		// ItemWithEnchantmentAssigner.assign(Items.WARPED_FUNGUS_ON_A_STICK, new EnchantDesc[]{new EnchantDesc(Enchantments.FIRE_ASPECT, 1)});
+	}
+
+	public static void mixin() {
+		if (Boolean.FALSE);
 	}
 
 }
